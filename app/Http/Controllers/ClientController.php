@@ -2,22 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ClientRequest;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ClientController extends Controller
 {
-    public function add(Request $request){
-        $validation=Validator::make($request->all(),[
-            'name'=>'required',
-            'region'=>'required',
-            'orientr'=>'required',
-            'phone'=>'required'                     
-        ]);
-        if($validation->fails()){
-            return ResponseController::error($validation->errors()->first(),422);
-        }
+    public function add(ClientRequest $request){        
         Client::create([
             'name'=>$request->name,
             'region'=>$request->region,

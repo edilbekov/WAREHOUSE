@@ -10,7 +10,7 @@ class CostController extends Controller
 {
     public function add(Request $request){
         $validation=Validator::make($request->all(),[
-            'product_id'=>'required',
+            'product_id'=>'required|exists:products,id',
             'cost'=>'required'
         ]);
         if($validation->fails()){

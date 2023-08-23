@@ -2,24 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ArrivalRequest;
 use App\Models\Arrival;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 
 class ArrivalController extends Controller
 {
-    public function add(Request $request){        
-        $validation=Validator::make($request->all(),[
-            'product_id'=>'required',
-            'amount'=>'required',
-            'price'=>'required',
-            'where_from'=>'required',
-            'date'=>'required'
-        ]);
-        if($validation->fails()){
-            return ResponseController::error($validation->errors()->first(),422);
-        }        
+    public function add(ArrivalRequest $request){                        
         Arrival::create([
             'product_id'=>$request->product_id,
             'amount'=>$request->amount,
@@ -28,6 +20,19 @@ class ArrivalController extends Controller
             'where_from'=>$request->where_from,
             'date'=>$request->date
         ]);
+        $product=Warehouse::select('amount')->where('product_id',$request->product_id)->first();          
+        if($product){
+            Warehouse::where('product_id',$request->product_id)->update([                
+                'amount'=>$request->amount+$product->amount
+            ]);
+        }
+        else{
+            Warehouse::create([
+                'product_id'=>$request->product_id,
+                'amount'=>$request->amount
+            ]);
+        }
+        
         return ResponseController::success();
     }
     public function view(){

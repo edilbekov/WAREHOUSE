@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function add(Request $request){
         $validation=Validator::make($request->all(),[
-            'category_id'=>'required',
+            'category_id'=>'required|exists:categories,id',
             'name'=>'required',
             'size'=>'required'
         ]);
