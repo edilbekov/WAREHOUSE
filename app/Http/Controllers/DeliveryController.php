@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderDelivered;
 use App\Models\Basket;
 use App\Models\Client;
 use App\Models\Delivery;
@@ -19,25 +20,29 @@ class DeliveryController extends Controller
         if($validation->fails()){
             return ResponseController::error($validation->errors()->first(),422);        
         }
-        $all_price=Basket::select('all_price','amount')->where('id',$request->basket_id)->first();        
+        $all_price=Basket::where('id',$request->basket_id)->first();        
         $debt=$all_price->all_price-$request->pay;
-        Delivery::create([
+        $delivered=Delivery::create([
             'basket_id'=>$request->basket_id,
             'pay'=>$request->pay,
             'debt'=>$debt
         ]);
-        $client_id=Basket::select('client_id','product_id')->where('id',$request->basket_id)->first();
-        $user_debt=Client::select('debt')->where('id',$client_id['client_id'])->first();
-        Client::where('id',$client_id['client_id'])->update([
-            'debt'=>$debt+$user_debt['debt']
+        $client_id=$all_price->client->id;
+        $product_id=$all_price->product->id;        
+        $client_debt=$all_price->client->debt;
+        $amount=Warehouse::select('amount')->where('product_id',$product_id)->first();        
+        
+        Client::where('id',$client_id)->update([
+            'debt'=>$debt+$client_debt
         ]);
         Basket::where('id',$request->basket_id)->update([            
             'delivered'=>true            
         ]);        
-        $ware=Warehouse::select('amount')->where('product_id',$client_id['product_id'])->first();
-        Warehouse::where('product_id',$client_id['product_id'])->update([
-            'amount'=>$ware['amount']-$all_price['amount']
+        Warehouse::where('product_id',$product_id)->update([
+            'amount'=>$amount['amount']-$all_price['amount']
         ]);
+
+        OrderDelivered::dispatch($delivered);
         return ResponseController::success();
     }
     public function view($client_id){  
@@ -47,4 +52,6 @@ class DeliveryController extends Controller
         }      
         return ResponseController::data($all[0]);
     }
+    
+    
 }
